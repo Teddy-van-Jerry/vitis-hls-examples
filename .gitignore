@@ -114,3 +114,14 @@
 
 # Microsoft Office Temp file
 ~$*
+
+# HLS
+*.cproject
+*.project
+*.apc
+*.settings
+*.log
+*hls_log*
+
+# This Project
+/ip
