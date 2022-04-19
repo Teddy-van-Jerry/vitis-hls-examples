@@ -112,6 +112,9 @@
 !*.bmm
 !*.xmp
 
+# MacOS
+.DS_Store
+
 # Microsoft Office Temp file
 ~$*
 
