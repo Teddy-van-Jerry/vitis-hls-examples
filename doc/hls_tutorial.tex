@@ -1,16 +1,24 @@
-% !TEX program = lualatex
+% !TEX program = xelatex
 
-\documentclass[English,Chinese,French,JP,TC,use boldface,simple name]{beaulivre}
+\documentclass[Chinese,TC,use boldface,simple name]{beaulivre}
 
 %%================================
 %% Import toolkit
 %%================================
 \usepackage{ProjLib}
 \usepackage{longtable}  % breakable tables
+\usepackage{tabularx}
+\usepackage{booktabs}
+\newcolumntype{Y}{>{\centering\arraybackslash}X} % centered X
+\renewcommand\tabularxcolumn[1]{m{#1}} % vertical centering
+\setlength{\aboverulesep}{1pt}
+\setlength{\belowrulesep}{1pt}
 % \usepackage{hologo}     % more TeX logo
 \usepackage{subfig}
+\usetikzlibrary{automata,positioning}
 \usetikzlibrary{calc}
 \graphicspath{{../fig}}
+\newcommand{\indextt}[1]{\index{#1@\texttt{#1}}}
 
 \UseLanguage{Chinese}
 
@@ -18,7 +26,7 @@
 \newtcolorbox{warning}[1][]{enhanced,
   before skip=2mm,after skip=3mm,
   boxrule=0.4pt,left=5mm,right=2mm,top=1mm,bottom=1mm,
-  colback=yellow!50,
+  colback=yellow!40,
   colframe=yellow!20!black,
   sharp corners,rounded corners=southeast,arc is angular,arc=3mm,
   underlay={%
@@ -44,6 +52,16 @@
     \fill[blue!45!white!50!black] ([yshift=-0.5mm]frame.north east)
     -- +(0,-0.3) -- +(0.4,0) -- cycle; },
 title={#2},#1}
+\newtcbox{\UGvitis}{enhanced,nobeforeafter,tcbox raise base,boxrule=0.4pt,top=0mm,bottom=0mm,
+  right=0mm,left=4mm,arc=1pt,boxsep=2pt,before upper={\vphantom{dlg}},
+  colframe=green!50!black,coltext=green!25!black,colback=green!10!white,
+  overlay={\begin{tcbclipinterior}\fill[green!75!blue!50!white] (frame.south west)
+    rectangle node[text=white,font=\sffamily\small,rotate=90] {UG} ([xshift=4mm]frame.north west);\end{tcbclipinterior}}}
+\newtcbox{\UGvivado}{enhanced,nobeforeafter,tcbox raise base,boxrule=0.4pt,top=0mm,bottom=0mm,
+  right=0mm,left=4mm,arc=1pt,boxsep=2pt,before upper={\vphantom{dlg}},
+  colframe=purple!50!black,coltext=purple!25!black,colback=purple!10!white,
+  overlay={\begin{tcbclipinterior}\fill[purple!75!blue!50!white] (frame.south west)
+    rectangle node[text=white,font=\sffamily\small,rotate=90] {UG} ([xshift=4mm]frame.north west);\end{tcbclipinterior}}}
 
 %%================================
 %% For typesetting code
@@ -164,13 +182,14 @@ title={#2},#1}
 
 \TitlePage [
     color = { main = forestgreen!75!black, back = forestgreen!10!yellow!30 },
-    logo = {\includegraphics[width=2cm]{logos/vivado_hls.jpeg}}
+    logo = {\includegraphics[width=2cm]{logos/vitis_hls.png}}
   ]
   {
-    , title     = Vivado HLS Tutorial Step by Step
+    , title     = Vitis HLS Tutorial Step by Step
     , subtitle  = {
                     \textsc{用 C++ 做硬件设计的黑科技}\\[10pt]
-                    \tiny Xilinx Vivado \texttt{2017.4}
+                    \tiny Xilinx Vivado \texttt{2017.4}\\[-8pt]
+                    \tiny Xilinx Vitis\hspace{1.65mm} \texttt{2021.2}
                   }
     , author    = 赵舞穹，LEADS
     , date      = {\today{}，南京}
@@ -181,6 +200,8 @@ title={#2},#1}
 
   硬件设计好难，从C++使用 Vivado 的高级综合（high level synthesis，HLS）工具也好难。
   我就将我一步一步的踩坑记录在这里。
+
+  \UGvitis{123--456}
 
 \tableofcontents
 
@@ -195,10 +216,32 @@ title={#2},#1}
 
   \section{软件版本}
 
-    出于统一的考虑，此处主要采用 Vivado 2017.4，不过之后我也将针对更新的 Vitis 2021.2 的不同点加以讨论。
-    下载可以前往 \href{https://china.xilinx.com/support/download/index.html/content/xilinx/zh/downloadNav/vivado-design-tools/archive.html}{Xilinx 网站}下载，
-    或者直接下载 \href{https://china.xilinx.com/member/forms/download/xef-vivado.html?filename=Xilinx_Vivado_SDK_2017.4_1216_1.tar.gz}{Windows、Linux全平台安装包}，下载之前需要登陆。
+    我主要使用 Vitis 2021.2 版本进行工作，
+    同时由于课题组之前常用 2017.4 并且其软件大小相对较小，我也将兼顾对 2017.4 版本的兼容。
+    下载对应版本可以自行前往 Xilinx 官网。
     安装完成后可以导入对应的 License 完成激活。
+
+    \begin{table}[htbp]
+      \caption{版本对比}
+      \label{tab:hls_version}
+      \renewcommand*{\arraystretch}{1.3}
+      \begin{tabularx}{\linewidth}{>{\bfseries\arraybackslash}cYY}
+        \toprule
+        & \textbf{\color{maintheme}Vitis HLS 2021.2} & \textbf{\color{maintheme}Vivado HLS 2017.4} \\
+        \midrule
+        Logo & \includegraphics[height=15mm]{logos/vitis_hls.png} & \includegraphics[height=15mm]{logos/vivado_hls.jpeg} \\ \hline
+        Windows 支持版本 & 10 \& 11 & 7 \& 10 \& (11) \\ \hline
+        Ubuntu 支持版本 & 16 \& 18 \& 20 & 16 \\ \hline
+        GCC 版本 & 6.2.0 & 4.6.3 \\ \hline
+        C++ 标准 & C++14 & C++98 \\ \hline
+        套装软件大小（Ubuntu） & 120.1G & 37.1G \\
+        \bottomrule
+      \end{tabularx}
+    \end{table}
+
+    两个版本 HLS 工具的主要区别在\cref{tab:hls_version} 中给出，
+    可以发现，总体来说 Vitis 2021.2 会提供更好的支持（例如可以使用更新的 C++ 语法），并且会有更快的速度。
+    不过相较于 Vivado 2017.4 软件大小会大很多，如果之前已经有 Vivado 2017.4 也可以不需要使用 Vitis 2021.2。
 
   \section{操作系统}
 
@@ -207,8 +250,10 @@ title={#2},#1}
       在 Windows 上运行 Vivado 2017.4 以及其 Vivado HLS 都是非常丝滑的，Vivado 支持 Windows 7 及以上版本。
       虽然官方文档没有指出对于 Windows 11 的支持性，但由于 Windows 11 与 Windows 10 的相似性，
       Windows 11 在我目前的测试下仍然没有问题。
-      （不过 Vivado 非 100\% 屏幕缩放会导致的模糊问题还没有得到解决，只能自己再忍一忍，或者跑路去 Linux，至少 Ubuntu 20 屏幕看上去就没有磨砂质感的界面了。
+      （不过 Vivado 2017.4 非 100\% 屏幕缩放会导致的模糊问题还没有得到解决，只能自己再忍一忍，或者跑路去 Linux，至少 Ubuntu 20 屏幕看上去就没有磨砂质感的界面了。
       Vivado HLS 的界面效果是都没有问题的。）
+
+      如果使用 Vitis 2021.2 体验就会比 Vivado 2017.4 还要丝滑，Windows 上也解决了界面模糊的问题。
 
       \begin{tip}
         我使用的版本是 Windows 11 Professional。
@@ -216,23 +261,26 @@ title={#2},#1}
 
     \subsection{Linux}
 
-      Linux 上使用 Vivado 和 Vivado HLS 相对 Windows 就会痛苦不少，主要体现在以下几个方面：
+      Linux 上使用 Vivado 2017.4 和 Vivado HLS 2017.4 相对 Windows 就会痛苦不少，主要体现在以下几个方面：
       \begin{enumerate}
         \item Linux 版本对于环境依赖性强，在安装和使用的过程中会使用到不少的包，例如 \texttt{libtinfo5} 等；
         \item HLS 环境的 C 及 C++ 的 include 路径会包括用户系统中 C 或 C++ 编译器的默认路径，造成头文件和 HLS 提供的编译器版本不匹配；
-        \item Vivado 2017.4 支持的 Linux 系统版本较老，例如 Ubuntu 只正式支持到 16。
+        \item Vivado 2017.4 支持的 Linux 系统版本较老，例如 Ubuntu 只正式支持 16。
       \end{enumerate}
 
       \begin{warning}
-        意识到了上述的几个问题之后，还是不建议使用 Linux 操作 HLS 相关工作，除非你对于 Linux 或 Unix 环境的配置绝对在行。
+        意识到了上述的几个问题之后，还是不建议使用 Linux 使用 Vivado HLS 2017.4 相关工作，除非你对于 Linux 或 Unix 环境的配置绝对在行。
       \end{warning}
 
-      如果想要尝试使用 Linux 版本的 Vivado 的话，有如下几个技巧：
+      如果想要尝试使用 Linux 版本的 Vivado 2017.4 的话，有如下几个技巧：
       \begin{itemize}
         \item 安装时缺包可以参考\href{https://support.xilinx.com/s/article/63794?language=en_US}{官方文章}；
         \item HLS 工具选择 C 仿真编译器在 GCC 和 Clang 之间切换，可能其中的某一个可以成功。（Ubuntu 20 上 Clang 可以完成简单的 C 仿真，综合都是可以的。但是在 C 与 RTL 的联合仿真中两个编译器都失败了。）
-        \item 如果仍然有问题，趁早投入微软爸爸的怀抱吧……
+        \item 如果仍然有问题，还是需要安装 Vitis 2021.2。硬盘空间不够甚至可以选择安装在移动硬内。
       \end{itemize}
+
+      使用 Vitis 2021.2 体验就比较好，因为 Vitis 2021.2 支持 Ubuntu 18 和 Ubuntu 20。
+      具体信息可以参考 Xilinx 网站。
 
       \begin{tip}
         我使用的发行版是 Ubuntu 20.04.3 LTS。
@@ -241,7 +289,7 @@ title={#2},#1}
 \part{快速入门}
 \parttext{“千里之行，始于足下”，首先从例子出发，完整的感受 HLS 设计的流程，在这之后我们再去深入探讨 HLS 中的众多技巧。}
 
-\chapter{Hello World}
+\chapter{Hello World}\index{Hello World}
 
   \section{案例目标}
 
@@ -256,10 +304,10 @@ title={#2},#1}
     \begin{definition}[HLS 操作步骤缩写定义]
       为了描述简便，我们给出如下一些缩写定义：
       \begin{itemize}
-        \item \textbf{CSim}：C 仿真（也包括 C++ 仿真），C Simulation；
-        \item \textbf{Syn}：综合，Synthesis；
-        \item \textbf{CoSim}：C 与 RTL 联合仿真，C/RTL Co-Simulation；
-        \item \textbf{Exp}：导出（例如导出为 Verilog IP 核），export。
+        \item \index{CSim}\textbf{CSim}：C 仿真（也包括 C++ 仿真），C Simulation；
+        \item \index{Syn}\textbf{Syn}：综合，Synthesis；
+        \item \index{CoSim}\textbf{CoSim}：C 与 RTL 联合仿真，C/RTL Co-Simulation；
+        \item \index{Exp}\textbf{Exp}：导出（例如导出为 Verilog IP 核），Export。
       \end{itemize}
       因此，整个 HLS 操作步骤可以被描述为
       \[
@@ -267,7 +315,7 @@ title={#2},#1}
       \]
     \end{definition}
 
-    以下例子使用 Vivado 2017.4，操作系统为 Windows 11 Professional。
+    以下例子使用 Vivado 2017.4，Vitis 2021.2 类似，操作系统为 Windows 11 Professional。
 
     \begin{tip}
       案例提供在 \url{https://github.com/SEU-LEADS/HLS_Examples}，C++ 代码在 \texttt{Basic/helloworld} 文件夹内，Verilog 测试文件在 \texttt{verilog/helloworld} 内。
@@ -289,6 +337,10 @@ title={#2},#1}
     可以看到如\cref{fig:new_project} 所示的界面，设置项目的名称和路径，
     项目名称设置为 \texttt{helloworld} 即可。
     需要注意的是项目会创建一个路径下的新文件夹，因此不需要为项目单独创建一个文件夹。
+    \begin{warning}
+      注意项目路径中不能包含空格。所以尽量也不要在路径中使用中文或其他特殊字符。
+    \end{warning}
+
     接下来两步分别要求添加源代码和测试（testbench）代码，按照要求添加即可。
     此处我们可以先不添加，在创建完项目后单独新建。
     添加源代码时需要设置 top 模块的名称，设置其为 \texttt{helloworld}（此设置后续仍然可以更改）。
@@ -365,10 +417,10 @@ int main() {
 }
     \end{lstlisting}
 
-  \section{CSim --- C++ 仿真测试}
+  \section{CSim --- C++ 仿真测试}\index{CSim}
 
     在上一个步骤完成 C++ 代码的书写，
-    可以进行 C Simulation，其对应的按钮图标为“窗口框左下有一个绿三角”，即\cref{fig:C_simulation} 右上角的图标。
+    可以进行 C Simulation，其对应的按钮图标为“窗口框左下有一个绿三角”，即\cref{fig:C_simulation} 右上角的图标。（Vitis 2021.2 为绿色箭头下拉框 C Simulation。）
     \begin{figure}[htbp]
       \centering
       \includegraphics[width=.3\linewidth]{win/helloworld/C_simulation.png}
@@ -378,7 +430,7 @@ int main() {
 
     点击后会弹出\cref{fig:C_simulation} 的设置，四个选项分别表示调试（Debug 模式）、仅编译、清理编译和优化编译（Release 模式）。
     此处我们选择优化编译。
-    \begin{tip}[Linux 系统功能]
+    \begin{tip}[Linux 系统功能（仅限 Vivado 2017.4）]
       如果在 Linux 系统上，还可以选择 C++ 编译器为 GCC 或 Clang。
     \end{tip}
     Input Argument 是 C++ 编译时的命令行选项，例如增加 \texttt{-std=c++03} 可以设置 C++ 编译标准为 C++03。
@@ -391,9 +443,9 @@ int main() {
       \label{fig:csim_result}
     \end{figure}
 
-  \section{Syn --- 综合}
+  \section{Syn --- 综合}\index{Syn}
 
-    完成 C 仿真后，点击 CSim 右边绿箭头进行综合，可以得到\cref{fig:syn_result} 中的结果。
+    完成 C 仿真后，点击 CSim 右边绿箭头进行综合（Vitis 2021.2 为绿色箭头下拉框 C Synthesis），可以得到\cref{fig:syn_result} 中的结果。
     中间页面给出了综合报告，对于各项资源的利用给出了分析。
     另外，点击窗口右上角的 Analysis，可以查看其他例如时序的分析结果。
     \begin{figure}[htbp]
@@ -407,11 +459,11 @@ int main() {
       因此不能过于相信 Syn 的正确性。
     \end{warning}
 
-  \section{CoSim --- RTL/C 联合仿真}
+  \section{CoSim --- RTL/C 联合仿真}\index{CoSim}
 
     在正式完成之前，还需要进行最后的验证——RTL 的结果和 C 仿真结果是否一致，
     因此，需要 RTL/C 联合仿真（CoSim）。
-    其按钮图标为 Syn 右边一个“窗口中带一个钩”，即\cref{fig:C_RTL_cosim} 右上角的图标。
+    其按钮图标为 Syn 右边一个“窗口中带一个钩”，即\cref{fig:C_RTL_cosim} 右上角的图标（Vitis 2021.2 为绿色箭头下拉框 Co-Simulation）。
     \begin{figure}[htbp]
       \centering
       \includegraphics[width=.3\linewidth]{win/helloworld/C_RTL_cosim.png}
@@ -421,7 +473,7 @@ int main() {
 
     此处，我们选择基于 Verilog 的 RTL 综合（也可以选择 VHDL），并且勾选优化编译与之前 CSim 一致。
     类似地，这里也可以设置对应的 Input Arguments。
-    \begin{tip}[Linux 系统功能]
+    \begin{tip}[Linux 系统功能（仅限 Vivado 2017.4）]
       与 CSim 中类似，CoSim 也可以选择编译器为 GCC 或 Clang。（Ubuntu 20 上 CSim 可以通过，但是 CoSim 就会遇到 linker error。鉴于这些不确定性，不建议在 Linux 系统上展开这些工作，或严格按照 Vivado 支持的系统配置。）
     \end{tip}
 
@@ -434,11 +486,11 @@ int main() {
       \label{fig:cosim_result}
     \end{figure}
 
-  \section{Exp --- 导出 IP 核}
+  \section{Exp --- 导出 IP 核}\index{Exp}
 
     在通过 CoSim 后，基本可以认定设计正确了，
     此时可以导出 IP 核（当然可以在窗口中设置为其他形式），
-    点击 CoSim 右侧“棕色上有十字”的图标，跳出\cref{fig:export_IP} 窗口进行设置。
+    点击 CoSim 右侧“棕色上有十字”的图标（Vitis 2021.2 为绿色箭头下拉框 Export），跳出\cref{fig:export_IP} 窗口进行设置。
     \begin{figure}[htbp]
       \centering
       \includegraphics[width=.3\linewidth]{win/helloworld/export_IP.png}
@@ -449,7 +501,7 @@ int main() {
       此处会提示导出失败。而错误的原因实际上是 Xilinx Vivado 的一个 bug。
       Bug 的主要原因是 HLS 定义的 \texttt{ip\_version} 采用格式 \texttt{YYMMDDHHMM} 是一个有符号 32 位数，
       因此从2022年1月1日起均会导出失败。
-      需要在\href{https://support.xilinx.com/s/article/76960?language=en_US}{Xilinx 网站}下载对应的补丁。
+      需要在 \href{https://support.xilinx.com/s/article/76960?language=en_US}{Xilinx 网站}下载对应的补丁，
       然后根据要求运行对应的 Python 代码修复问题。
     \end{tip}
     
@@ -519,7 +571,8 @@ module HELLOWORLD_IP_TB();
 endmodule // of HELLOWORLD_IP_TB
       \end{lstlisting}
 
-      行为测试的结果如\cref{fig:behavioral_sim} 所示。
+      行为测试的结果如\cref{fig:behavioral_sim} 所示，
+      这与我们设计的 \texttt{helloworld} 模块逻辑右移一位的目标相符合。
       \begin{figure}[htbp]
         \centering
         \includegraphics[width=.8\linewidth]{win/helloworld/behavioral_sim.png}
@@ -533,9 +586,84 @@ endmodule // of HELLOWORLD_IP_TB
         \includegraphics[width=.8\linewidth]{win/helloworld/RTL_result.png}
         \caption{RTL 级电路}
         \label{fig:RTL_result}
-      \end{figure}    
+      \end{figure}
 
-\chapter{FFT}
+  \section{总结}
+
+    在这个 Hello World 示例中，我们完整走完了从 C++ 代码生成 Verilog IP 核再验证 IP 核的过程，
+    不过目前我们会发现如下的几个问题和局限，将在之后详细介绍：
+    \begin{itemize}
+      \item 使用了 C++ 自带的数据类型，其位数固定，例如 \texttt{int} 变量为 32 位，可能存在一定的浪费；
+      \item 时序和并行度目前没有进行设计；
+      \item 更加复杂的 C++ 不一定能够支持（编译器标准问题和 Syn 支持的语法）以及 HLS 工具额外提供的 C++ 库。
+    \end{itemize}
+
+\chapter{FFT}\index{FFT}
+
+  \section{案例目标}
+
+    快速傅立叶变换（fast Fourier transform，FFT）可以算是硬件设计的入门模块，
+    此处用这个经典例子探讨 HLS 设计中的众多细节。
+    在这个例子中，我们将实现：
+    \begin{itemize}
+      \item \DNF<完成后添加 FFT 示例实现的内容>
+    \end{itemize}
+
+  \section{FFT Naive}
+
+    \subsection{设计架构}
+
+      此处我们首先实践一个简单的 FFT 例子，其架构如\cref{fig:DIT-FFT-butterfly} 所示。
+      \begin{figure}[htbp]
+        \centering
+        \input{../fig/illustration/DIT-FFT-butterfly.tex}
+        \caption{蝶形 8点基2的 FFT 架构示意图~\copyright~[2022]~Yangwenbo99 at \href{https://en.wikipedia.org/wiki/File:DIT-FFT-butterfly.svg}{Wikipedia}}
+        \label{fig:DIT-FFT-butterfly}
+      \end{figure}
+
+    \subsection{代码实现}
+
+      \begin{warning}
+        由于 HLS 编译器限制原因，无法使用最常用的 C++11 标准编写代码，此处我们统一使用 C++98 版本。
+        此外代码的格式、标准库的使用均建议按照本文档的规范进行。
+      \end{warning}
+
+      从这里开始，我们心中需要有一个目标，就是\textbf{尽可能优化硬件的实现效果}，
+      而不是简单的写出一个正确的 C++ 代码。
+      由于这不是正常的 C++ 代码写作，而是通过 HLS 工具，
+      因此我们不是面向现代 C++ 编译器，而是面向 HLS 的高效综合，
+      在许多习惯上我们要从一开始树立，这里给出了使用的 C++ 变量定义。
+
+      \begin{definition}[整数类型]\index{Zzhengshuleixing@整数类型}
+        整数（integer）类型包括有符号（signed）和无符号（unsigned）两种。
+        除去使用 C++ 中定义的 \texttt{char}、\texttt{short}、\texttt{int}、\texttt{long}、\texttt{long long} 及其 \texttt{unsigned} 版本变量外，建议在涉及硬件实现的位数时使用 HLS 工具提供的 \indextt{ap\_int}\texttt{ap\_int} 和 \indextt{ap\_uint}\texttt{ap\_uint}。
+        这些类型可以自由定义其位数，详见 UG 第 80 和 218 页。
+      \end{definition}
+      \begin{example}[整数类型]
+        使用 HLS 定义的这些整数类型需要首先添加库。
+        \begin{lstlisting}[language=C++,numbers=none]
+#include <ap_int.h> // for type ap_int and ap_uint
+        \end{lstlisting}
+        然后，我们就可以给出如下定义的例子：
+        \begin{lstlisting}[language=C++,numbers=none,morekeywords={ap\_int,ap\_uint}]
+ap_int<12> a;             // 12-bit signed value 
+ap_uint<8> b;             // 8-bit unsigned value
+const int WIDTH = 4;      // define width (NOTE: const is required)
+ap_uint<WIDTH> c;         // 4-bit unsigned value
+typedef ap_int<6> TYPE_T; // TYPE_T is alias for ap_int<6>
+TYPE_T d;                 // 6-bit signed value
+        \end{lstlisting}
+        在上述例子中，我们可以看到不同的整数变量定义方法，其中比较推荐定义一个常量类型的整数代指位数，
+        并且在整个设计中主要用到的类型使用 \texttt{typedef} 定义。
+        这样两种方法都可以减少代码中的错误以及降低修改的成本，使得代码更加整洁有条理。
+
+        另外，默认的最大宽度是1024比特，如果需要更宽的数值（例如 4096），需要在 \verb|#include<ap_int.h>| 之前添加\indextt{AP\_INT\_MAX\_W}
+        \begin{lstlisting}[language=C++,numbers=none]
+#define AP_INT_MAX_W 4096
+        \end{lstlisting}
+      \end{example}
+
+\printindex
 
 \end{document}
 \endinput
