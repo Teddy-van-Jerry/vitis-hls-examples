@@ -282,3 +282,4 @@ TSWLatexianTemp*
 *.cls
 *.sty
 *.mst
+!hls_tutorial.sty
