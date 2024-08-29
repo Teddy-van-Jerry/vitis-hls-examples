@@ -361,6 +361,7 @@ int main() {
 
       增加 Test Bench 文件 \texttt{helloworld\_ip\_tb.v}，模块名为 \texttt{HELLOWORLD\_IP\_TB}。
       其中创建的 \texttt{HELLO\_WORLD} instance 名为 \texttt{Uhelloworld}。
+      展开 IP 内容可以看到 Insantiation Template，其中 \texttt{.veo} 文件给出了实例化的模板。
       \begin{lstlisting}[style={v}, title={helloworld\_ip\_tb.v}]
 `timescale 1ns / 1ps
 
@@ -496,11 +497,82 @@ TYPE_T d;                 // 6-bit signed value
         \end{lstlisting}
       \end{example}
 
+      Vitis/Vivado HLS 中非常重要的是其固定位宽的浮点数类型，
+      这在硬件设计中是非常重要的一环。
       \begin{definition}[浮点类型]\index{FZfudianleixing@浮点类型}
         浮点类型（float）包括了 C++ 中已有的 \indexfloat{double}\indextt{double}\texttt{double} 和 \indexfloat{float}\texttt{float} 类型（\UGvitis{186} \UGvitis{575--576} \UGvivado{186} \UGvivado{218}）
         Vitis/Vivado 也提供了16位的半精度浮点数（half-precision floating-point data types） \indexfloat{half}\texttt{half} （\UGvivado{83--84}）。
         不过最常用的是指定精度的浮点数类型（arbitrary precision fixed-point data types）\indexfloat{ap\_fixed}\texttt{ap\_fixed} 和 \indexfloat{ap\_ufixed}\texttt{ap\_ufixed}，具体的内容可以参考 \UGvitis{183--184}\UGvitis{577-578} \UGvivado{81--82} \UGvivado{221--225}。
       \end{definition}
+      
+      \begin{example}[浮点类型]
+        首先，类似整数类型，需要添加对应的头文件
+        \begin{lstlisting}[language=C++,numbers=none]
+#include <ap_fixed.h> // for type ap_fixed and ap_ufixed
+        \end{lstlisting}
+        然后，我们给出简单的使用例子，其他更加复杂的运用可以参考 UG 上的介绍和例子。
+      \end{example}
+      
+      下面我们通过这个简单的例子来了解这些基本变量类型的使用。
+      \begin{lstlisting}[language=C++,morekeywords={ap\_int,ap\_fixed,ap\_ufixed,std,cout,endl,to\_string}]
+#include <iostream>
+#include <ap_int.h>
+#include <ap_fixed.h>
+
+int main() {
+    std::cout << "Compiler Version: " __VERSION__ << std::endl;
+
+    /***** Integer *****/
+    ap_int<4> i1 = 2;
+    std::cout << "i1 = " << i1 << std::endl;
+    i1 = 0b0101; // 5
+    std::cout << "i1 = " << i1 << std::endl;
+    i1 *= 2; // -6 (overflow)
+    std::cout << "i1 = " << i1 << std::endl;
+    i1 >>= 1; // -3 (right shift 1)
+    std::cout << "i1 = " << i1 << std::endl;
+    // convert to a binary string
+    std::cout << "i1 = " << i1.to_string(2) << std::endl;
+    // access the element at location 1
+    std::cout << "i1[1] = " << i1[1] << std::endl;
+
+    /***** Float *****/
+    ap_fixed<6, 4> f1 = 3.1415926; // 3
+    // 6 bits data, 4 bits before left of the binary point
+    // therefore 1 sign, 3 int, 2
+    std::cout << "f1 = " << f1 << std::endl;
+    ap_fixed<6, 4> f2 = 5.99; // 5.75
+    // the default behavior, truncation to minus infinity
+    std::cout << "f2 = " << f2 << std::endl;
+    ap_fixed<6, 4, AP_RND> f3 = 5.99;
+    // round to plus infinity
+    std::cout << "f3 = " << f3 << std::endl;
+    f3 += ap_fixed<6, 4>(3.3); // -6.75 (overflow)
+    std::cout << "f3 = " << f3 << std::endl;
+    ap_ufixed<6, 4> f4 = 12.34; // 12.25
+    std::cout << "f4 = " << f4 << std::endl;
+    f4 += 4; // 0.25 (overflow)
+    std::cout << "f4 = " << f4 << std::endl;
+
+    return 0;
+}
+      \end{lstlisting}
+      首先在第6行输出了编译器的版本，
+      如果在 Vitis 2021.2 上我们可以看到 \texttt{6.2.0} 的输出。
+
+      第9行定义了有符号整数类型变量 \texttt{i1}，设定其初始值为 \texttt{2}。
+      输出一个 \texttt{ap\_(u)int} 或 \texttt{ap\_(u)fixed} 变量可以直接使用 C++ 标准的输出流。
+      第11行的赋值采用了 C++ 的标准方式，
+      \texttt{0b} 表示二进制，
+      \texttt{0x} 或 \texttt{0X} 表示十六进制等。
+      第13行将数字乘二，由于四位有符号数范围为 \texttt{-8} 到 \texttt{7}，
+      这里产生了 overflow，由于采用补码的形式，所以得到的结果是 \texttt{-6}。
+      第15行对数值进行了右移操作，需要注意这里是\textbf{算数右移}，
+      符合数学的运算规则和标准 C++ 的运算方式，因此输出结果为 \texttt{-3}。
+      \begin{tip}[C++常数前缀]
+        需要注意，二进制数的常数 \texttt{0b} 前缀在 C++14中才提供了支持，所以使用 Vivado 2017.4 的时候需要避免这样的运用。
+        可以参考 \href{https://en.cppreference.com/w/cpp/language/integer_literal}{integer literal} 的介绍。
+      \end{tip}
 
     \subsection{变量运算}
 
