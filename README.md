@@ -2,6 +2,8 @@
 Basic examples for Vitis HLS (formerly Vivado HLS)
 with documentation in Chinese.
 
+> HLS: High-Level Synthesis
+
 ## Documentation
 Documentation is in *Chinese (Simplified)* (in the `docs` directory).
 LaTeX source files are also available.
@@ -13,10 +15,10 @@ LaTeX source files are also available.
 ## Further Readings
 
 [**FLAMES**: Flexible Linear Algebra with Matrix-Empowered Synthesis](https://github.com/autohdw/flames)
-is a Vitis HLS library for efficient linear algebra.
+is a template-based Vitis HLS library for efficient linear algebra.
 
 If you find this project and/or FLAMES useful,
-please cite our paper: [**Flexible High-Level Synthesis Library for Linear Transformations**](https://ieeexplore.ieee.org/document/10437992), early access, IEEE TCAS-II.
+please cite our paper: [**Flexible High-Level Synthesis Library for Linear Transformations**](https://ieeexplore.ieee.org/document/10437992), IEEE TCAS-II, 2024.
 [ [IEEE Xplore](https://ieeexplore.ieee.org/document/10437992) ]
 [ [PDF](https://wqzhao.org/assets/zhao2024flexible.pdf) ]
 [ [DOI](https://doi.org/10.1109/TCSII.2024.3366282) ]
